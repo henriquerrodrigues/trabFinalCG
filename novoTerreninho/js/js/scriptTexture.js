@@ -8,6 +8,7 @@ let animais = [];
 let parametrosGui;
 let gui;
 let cameraTarget = null;
+let cameraTopDown = false; // quando true, trava movimentos do mouse e posiciona a câmera de cima
 
 // ---------------- Inicialização ----------------
 export function init() {
@@ -34,6 +35,8 @@ export function init() {
     scene.add(ground);
 
     camera.position.set(0, 15, 30);
+    // Opcional: habilitar visão top-down (mude para true se quiser ver o terreno de cima)
+    setCameraTopDown(true);
 
     // Carrega animais
     carregarAnimais();
@@ -43,7 +46,7 @@ export function init() {
 }
 
 function cameraMouseMove(event) {
-    if (!cameraTarget) {
+    if (!cameraTarget && !cameraTopDown) {
         const mouseX = (event.clientX / window.innerWidth) * 2 - 1;
         const mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -69,8 +72,27 @@ function carregarAnimais() {
     // 2. Criar um material com a textura
     const materialComTextura = new THREE.MeshPhongMaterial({ map: textura });
 
+
+
+    // Gerador de modelos de plantas em grade usando uma função matemática para variar a altura/posição
+    function generatePlantModels({ rows = 4, cols = 5, spacing = 10, startX = 10, startZ = 0, scaleMin = 0.08, scaleMax = 0.12, amplitude = 0.5 } = {}) {
+        const out = [];
+        for (let i = 0; i < rows; i++) {
+            for (let j = 0; j < cols; j++) {
+                const x = startX + i * spacing;
+                const z = startZ + j * spacing;
+                // Função matemática para variar o eixo Y (pode ajustar para ruído, perlin, etc.)
+                const y = 2 + Math.sin((x + z) * 0.1) * amplitude;
+                const scale = scaleMin + Math.random() * (scaleMax - scaleMin);
+                const rot = new THREE.Euler(0, Math.random() * Math.PI * 2, 0);
+                out.push({ nome: 'planta', caminho: 'assets/grass/14.obj', pos: new THREE.Vector3(x, y, z), scale: scale, rot: rot });
+            }
+        }
+        return out;
+    }
+
+    // Mantemos alguns modelos especiais e depois adicionamos a grade gerada
     const modelos = [
-        // ... (seus objetos de modelo inalterados) ...
         { 
             nome: 'planta', 
             caminho: 'assets/axzhr7uev7k0-Charizard/006 - Charizard/BR_Charizard-Shiny01.obj', 
@@ -83,127 +105,24 @@ function carregarAnimais() {
             caminho: 'assets/ah7j4re62ww0-Weedle/weedle.obj', 
             pos: new THREE.Vector3(10, 2, 10),
             scale: 1,
-            rot: new THREE.Euler(0.5,Math.PI / 2, 0)
-        },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(10, 2, 30),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(10, 2, 40),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
+            rot: new THREE.Euler(0.5, Math.PI / 2, 0)
         },
         { 
-            nome: 'palnta', 
-            caminho: 'assets/grass/14.obj', 
-            pos: new THREE.Vector3(20, 2, 0),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
+            nome: 'planta', 
+            caminho: 'assets/downloads/Moon 2K.obj', 
+            pos: new THREE.Vector3(10, 2, 0),
+            scale: 5,
+            rot: new THREE.Euler(0.5, Math.PI / 2, 0)
         },
         { 
-            nome: "planta", 
-            caminho: "assets/grass/14.obj", 
-            pos: new THREE.Vector3(20, 2, 10),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
+            nome: 'planta', 
+            caminho: 'assets/ah7j4re62ww0-Weedle/weedle.obj', 
+            pos: new THREE.Vector3(10, 2, 10),
+            scale: 1,
+            rot: new THREE.Euler(0.5, Math.PI / 2, 0)
         },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(20, 2, 20),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(20, 2, 30),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-                {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(20, 2, 40),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-                {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(30, 2, 0),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-                {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(30, 2, 10),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-                {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(30, 2, 20),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(30, 2, 30),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-                {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(30, 2, 40),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(40, 2, 0),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(40, 2, 10),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(40, 2, 20),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-                {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(40, 2, 30),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
-        {
-            nome: "planta",
-            caminho: "assets/grass/14.obj",
-            pos: new THREE.Vector3(40, 2, 40),
-            scale: 0.1,
-            rot: new THREE.Euler(0, Math.PI / 2, 0)
-        },
+        // gera uma grade de plantas a partir de parâmetros — ajuste rows/cols/spacing conforme necessário
+        ...generatePlantModels({ rows: 7, cols: 7, spacing: 10, startX: -30, startZ: -30, scaleMin: 0.08, scaleMax: 0.12, amplitude: 0.5 })
     ];
 
     let animaisCarregados = 0;
@@ -268,7 +187,7 @@ function onWindowResize() {
 
 // ---------------- Focar Camera ----------------
 function focarCamera(nome) {
-    // const animal = animais.find(a => a.nome === nome);
+    const animal = animais.find(a => a.nome === nome);
     if (!animal) {
         console.log("Animal não encontrado:", nome);
         return;
@@ -297,4 +216,19 @@ function animate() {
     }
 
     renderer.render(scene, camera);
+}
+
+// ---------------- Camera Top-Down ----------------
+function setCameraTopDown(enable) {
+    cameraTopDown = enable;
+    if (!camera) return;
+    if (enable) {
+        // Posiciona a câmera acima do terreno e mira para o centro
+        camera.position.set(0, 60, 0.1);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+    } else {
+        // Restaura posição padrão
+        camera.position.set(0, 15, 30);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+    }
 }
