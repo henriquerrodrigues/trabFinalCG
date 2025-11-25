@@ -1,4 +1,7 @@
 // Question Reference: discourse.threejs.org/t/how-do-i-make-interactive-grass-patches/65340
+// import * as THREE from 'three';
+// import {OBJLoader} from 'three/addons/loaders/OBJLoader.js'
+// import {FBXLoader} from 'three/addons/loaders/FBXLoader.js'
 
 let camera, scene, renderer, ground, lightPrimary, lightSecondary, assets, controls, player, raycaster, pointer;
 
@@ -303,6 +306,7 @@ const init = () => {
   controls = new THREE.OrbitControls(camera, renderer.domElement);
   
   createWorld();
+  // loadObj();
 }
 
 const animate = () => {
@@ -330,6 +334,138 @@ assets = {
   background: '//cdn.wtlstudio.com/sample.wtlstudio.com/2b211464-b704-4060-a50c-126fc53a8f27.jpg',
   environment: '//cdn.wtlstudio.com/sample.wtlstudio.com/8e560393-27e2-4092-acb1-a33b17b6a113.hdr'
 };
+
+var loadObj = function(){
+    let objLoader = new OBJLoader();
+    let fbxLoader = new FBXLoader();
+    let textLoader = new THREE.TextureLoader();
+
+    objLoader.load (
+        "assets/Wolf.obj",
+        function(obj){
+            obj.traverse(function (child){
+                if (child instanceof THREE.Mesh){
+                    child.material = new THREE.MeshNormalMaterial();
+                }
+            });
+            scene.add(obj);
+            objects["lobao"] = obj;
+            obj.position.x = 90;
+            obj.scale.x = obj.scale.y = obj.scale.z = 30;
+
+            
+        },
+        function(progress){
+            console.log("ta vivo! "+(progress.loaded/progress.total)*100 + "%");
+        },
+        function(error){
+            console.log("Deu merda " + error);
+        }
+    );
+
+    fbxLoader.load (
+        "assets/fbx/Dragon.fbx",
+        function(obj){
+            obj.traverse(function (child){
+                if (child instanceof THREE.Mesh){
+                    console.log(child)
+
+                    let texture = textLoader.load("assets/fbx/Dragon_ground_color.jpg");
+                    child.material =  new THREE.MeshStandardMaterial({map: texture});
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+            scene.add(obj);
+            objects["dragon"] = obj;
+            // obj.position.x = -10;
+            // obj.scale.x = obj.scale.y = obj.scale.z = 0.01;
+            // obj.position.y -=5.8;
+
+
+            //Animation stuff
+            let animation;
+
+            mixer = new THREE.AnimationMixer(obj);
+
+            //voando
+            animation = mixer.clipAction(obj.animations[1]);
+            animationActions.push(animation);
+
+            //andando
+            animation = mixer.clipAction(obj.animations[0]);
+            animationActions.push(animation);
+
+            //idle
+            animation = mixer.clipAction(obj.animations[2]);
+            animationActions.push(animation);
+
+             //apertado banheiro
+            animation = mixer.clipAction(obj.animations[3]);
+            animationActions.push(animation);
+
+             
+
+
+            activeAnimation = animation;
+
+            setAction(animationActions[0]);
+
+            loadFinished = true;
+            
+            activeAnimation.play();
+     
+            
+        },
+        function(progress){
+            console.log("ta vivo! "+(progress.loaded/progress.total)*100 + "%");
+        },
+        function(error){
+            console.log("Deu merda " + error);
+        }
+    );
+}
+
+// Moves
+var velOmbro = 0.01;
+var velCotovelo = 0.01;
+
+var onKeyUp = function (e){
+    if(e.keyCode == 87){
+        isMovingForward = false;
+        setAction(animationActions[0]);
+    }
+}
+
+var onKeyDown = function (e){
+   
+    if (e.keyCode == 187){ // +
+        objects["ombro"].scale.x+= 0.01;
+        objects["ombro"].scale.y+= 0.01;
+        objects["ombro"].scale.z+= 0.01;
+    }
+
+    if (e.keyCode == 189){ //-
+        objects["cubo1"].scale.x-= 0.01;
+        objects["cubo1"].scale.y-= 0.01;
+        objects["cubo1"].scale.z-= 0.01;
+    }
+
+    if (e.keyCode == 82){ //R
+         objects["pivoOmbro"].rotation.x-= velOmbro;
+         if (objects["pivoOmbro"].rotation.x < -1.62 || objects["pivoOmbro"].rotation.x > 0.9)
+            velOmbro*=-1;
+
+    }
+    if (e.keyCode == 32) // space
+            velCubo = velCubo == 0 ? 0.001 : 0;
+
+    if(e.keyCode == 87 && !isMovingForward){ // W
+        console.log("cheguei aqui");
+        isMovingForward = true;
+        setAction(animationActions[1]);
+    }
+}
 
 init();
 animate();

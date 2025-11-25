@@ -3,10 +3,6 @@ import {GUI} from 'three/addons/libs/lil-gui.module.min.js'
 import {OBJLoader} from 'three/addons/loaders/OBJLoader.js'
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js'
 
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import {RGBELoader} from 'three/examples/jsm/loaders/RGBELoader.js';
-
 
 let camera, scene, renderer;
 
@@ -211,13 +207,13 @@ var loadObj = function(){
     );
 
     fbxLoader.load (
-        "asset/source/MegaLycanroc.fbx",
+        "assets/fbx/8824/Pokemon XY/Umbreon/Umbreon.FBX",
         function(obj){
             obj.traverse(function (child){
                 if (child instanceof THREE.Mesh){
                     console.log(child)
 
-                    let texture = textLoader.load("assets/textures/pm0829_12_body_col.png");
+                    let texture = textLoader.load("assets/fbx/8824/Pokemon XY/Umbreon/images_shiny/pm0197_00_Body1.png");
                     child.material =  new THREE.MeshStandardMaterial({map: texture});
                     child.castShadow = true;
                     child.receiveShadow = true;
