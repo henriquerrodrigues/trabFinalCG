@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
+import { TGALoader } from 'three/addons/loaders/TGALoader.js';
 import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
 let camera, scene, renderer;
@@ -25,7 +27,20 @@ var criaIluminacao = function(){
     
     directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(100, 100, 100);
+    directionalLight.castShadow = true;
+    // shadow config
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.left = -200;
+    directionalLight.shadow.camera.right = 200;
+    directionalLight.shadow.camera.top = 200;
+    directionalLight.shadow.camera.bottom = -200;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 500;
+    directionalLight.shadow.bias = -0.0005;
     scene.add(directionalLight);
+    // softer shadows
+    if (renderer) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 }
 
 var mudarIluminacao = function(tipo) {
@@ -80,7 +95,7 @@ function generatePlantModels({ rows = 4, cols = 5, spacing = 10, startX = 10, st
             const y = - 2 + Math.sin((x + z) * 0.1) * amplitude;
             const scale = scaleMin + Math.random() * (scaleMax - scaleMin);
             const rot = new THREE.Euler(0, Math.random() * Math.PI * 2, 0);
-            out.push({ nome: 'planta', caminho: 'assets/grass/14.obj', pos: new THREE.Vector3(x, y, z), scale: scale, rot: rot, iluminacao: iluminacao });
+            out.push({ nome: 'planta', caminho: 'assets/grass/13.obj', pos: new THREE.Vector3(x, y, z), scale: scale, rot: rot, iluminacao: iluminacao });
         }
     }
     return out;
@@ -152,13 +167,116 @@ export function init() {
 // Criar GUI para controlar iluminação
 function criarGuiIluminacao() {
     const gui = new GUI();
-    const parametros = { iluminacao: 'amanhecer' };
+    const parametros = { iluminacao: 'amanhecer', focoCasa: false };
     
     gui.add(parametros, 'iluminacao', ['amanhecer', 'entardecer', 'noite'])
         .name('Tipo de Iluminação')
         .onChange((valor) => {
             mudarIluminacao(valor);
         });
+    
+    gui.add(parametros, 'focoCasa')
+        .name('Foco na Casa (Amanhecer)')
+        .onChange((valor) => {
+            if (valor) {
+                focoCasa(true);
+            } else {
+                focoCasa(false);
+            }
+        });
+}
+
+// Carregar a casa (DAE) e exibir com foco
+let casaCarregada = null;
+
+function focoCasa(ativo) {
+    if (ativo) {
+        // Se a casa ainda não foi carregada, carregar agora
+        if (!casaCarregada) {
+            carregarCasa();
+        } else {
+            casaCarregada.visible = true;
+        }
+        
+        // Definir iluminação para amanhecer
+        mudarIluminacao('amanhecer');
+        
+        // Posicionar câmera com vista de fora para a casa
+        camera.position.set(50, 40, 50);
+        camera.lookAt(0, 0, 0);
+        
+        // Resetar controles de câmera para vista fixa
+        cameraControls.theta = Math.PI / 4;
+        cameraControls.phi = Math.PI / 3;
+        cameraControls.radius = 70;
+        
+        console.log('Câmera posicionada com foco na casa ao amanhecer');
+    } else {
+        // Esconder a casa
+        if (casaCarregada) {
+            casaCarregada.visible = false;
+        }
+        
+        // Retornar câmera à posição padrão
+        camera.position.set(60, 20, 60);
+        camera.lookAt(0, 0, 0);
+        cameraControls.theta = 0;
+        cameraControls.phi = Math.PI / 4;
+        cameraControls.radius = 80;
+    }
+}
+
+// Carregar modelo DAE da casa
+function carregarCasa() {
+    const colladaLoader = new ColladaLoader();
+    const modelPath = 'assets/fbx/bedroom-with-boxers-bag/source/room+with+boxers+bag/model.dae';
+    const texturesPath = 'assets/fbx/bedroom-with-boxers-bag/source/room+with+boxers+bag/';
+
+    colladaLoader.load(modelPath, (collada) => {
+        casaCarregada = collada.scene;
+        
+        // Escalar a casa
+        casaCarregada.scale.set(5, 5, 5);
+        casaCarregada.position.set(0, -6, 0);
+        
+        // Aplicar sombras e carregar texturas dos meshes
+        casaCarregada.traverse(child => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                
+                // Tentar carregar textura para cada mesh
+                const textureLoader = new THREE.TextureLoader();
+                const meshName = child.name || child.material?.name || 'texture';
+                
+                // Tentar carregar com diferentes extensões
+                const tryLoadTexture = (filename) => {
+                    textureLoader.load(texturesPath + filename, (texture) => {
+                        texture.colorSpace = THREE.SRGBColorSpace;
+                        if (!child.material) {
+                            child.material = new THREE.MeshStandardMaterial();
+                        }
+                        child.material.map = texture;
+                        child.material.needsUpdate = true;
+                        console.log('Textura carregada:', filename);
+                    }, undefined, () => {
+                        // Falha silenciosa para tentar próxima extensão
+                    });
+                };
+                
+                // Tentar diferentes extensões
+                tryLoadTexture(meshName + '.png');
+                tryLoadTexture(meshName + '.jpg');
+                tryLoadTexture(meshName + '.tga');
+            }
+        });
+        
+        // Adicionar à cena
+        scene.add(casaCarregada);
+        console.log('Casa carregada com sucesso!', casaCarregada);
+    }, undefined, (err) => {
+        console.error('Erro ao carregar casa DAE:', err);
+    });
 }
 
 // Carregar animais/plantas
@@ -268,6 +386,8 @@ function carregarAnimais() {
     });
     // Carrega pássaros para o céu (aparecerão em entardecer)
     carregarPassaros(6);
+    // Carrega grama com textura para noite
+    carregarGramanoite(5);
 }
 
 var nossaAnimacao = function () {
@@ -296,6 +416,61 @@ var nossaAnimacao = function () {
     renderer.render( scene, camera );
 }
 
+// Carrega grama OBJ com textura TGA para noite
+function carregarGramanoite(count = 5) {
+    const objLoader = new OBJLoader();
+    const tgaLoader = new TGALoader();
+    const modelPath = 'assets/grass/16.obj';
+    const texPath = 'assets/grass/diffuse.tga';
+
+    // Carregar textura TGA
+    tgaLoader.load(texPath, (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+        const grassMaterial = new THREE.MeshStandardMaterial({ map: texture });
+
+        // Carregar modelo OBJ
+        objLoader.load(modelPath, (obj) => {
+            // Aplicar material ao modelo
+            obj.traverse(child => {
+                if (child.isMesh) {
+                    child.material = grassMaterial;
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            // Clonar e instanciar múltiplas vezes
+            for (let i = 0; i < count; i++) {
+                const clone = obj.clone();
+                // Espalhado sobre a área do chão - bem espalhado
+                const x = (Math.random() - 0.5) * 600;
+                const z = (Math.random() - 0.5) * 600;
+                const y = -5.8 + Math.random() * 0.5; // muito próximo do chão
+
+                clone.position.set(x, y, z);
+                // Rotação aleatória no eixo Y (yaw)
+                clone.rotation.set(0, Math.random() * Math.PI * 2, 0);
+
+                // // Escala aleatória
+                // const s = 0.5 + Math.random() * 1.0;
+                // clone.scale.set(s, s, s);
+
+                scene.add(clone);
+
+                // Adicionar à categoria noite
+                objetosPorIluminacao.noite.push(clone);
+                clone.visible = (tipoIluminacao === 'noite');
+            }
+
+            console.log('Grama (noite) carregada:', count);
+        }, undefined, (err) => {
+            console.error('Erro ao carregar grama OBJ:', err);
+        });
+    }, undefined, (err) => {
+        console.error('Erro ao carregar textura TGA:', err);
+    });
+}
+
 // Carrega o modelo FBX dos pássaros e instancia alguns para o céu
 function carregarPassaros(count = 6) {
     const fbxLoader = new FBXLoader();
@@ -321,6 +496,13 @@ function carregarPassaros(count = 6) {
             inst.position.set(x, height, z);
             inst.scale.set(0.5, 0.5, 0.5);
             scene.add(inst);
+            // garantir que cada malha do clone projete sombra
+            inst.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = false;
+                }
+            });
 
             // guardar dados de animação
             const birdData = {
