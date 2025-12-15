@@ -1,28 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<title>Dagrão</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-	</head>
-	<body>
-		<script type="importmap">
-			{
-				"imports": {
-					"three": "./js/three/three.module.js",
-					"three/addons/": "./js/jsm/",
-					"main" : "./js/ex1106.js"
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TF CG - Tyson's Wrath (Gym Edition)</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; user-select: none; background-color: #111; }
+        
+        /* UI Container */
+        #ui-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        
+        #instructions {
+            background: rgba(0,0,0,0.8); padding: 30px; border-radius: 10px; border: 2px solid #2e86de;
+            color: white; text-align: center; cursor: pointer; pointer-events: auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
 
+        h1 { margin-top: 0; color: #e74c3c; text-transform: uppercase; font-style: italic; }
+        
+        #click-counter {
+            display: none; position: fixed; top: 20px; right: 20px;
+            font-size: 24px; font-weight: bold; color: #ff0000;
+            background: rgba(0, 0, 0, 0.7); padding: 10px 15px; border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui-container">
+        <div id="instructions">
+            <h1>Academia do Tyson</h1>
+            <p>Clique para Entrar no Ringue</p>
+            <hr style="border-color: #555;">
+            <p>WASD = Andar | SHIFT = Correr | ESPAÇO = Pular</p>
+            <p>Mouse = Olhar | Botão Esq/Dir = Socar</p>
+            <p><strong>Aproxime-se do Mike no ringue para desafiá-lo!</strong></p>
+        </div>
+    </div>
+    <div id="click-counter">Cliques: 0 / 10</div>
 
-				}
-			}
-		</script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "lil-gui": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/lil-gui.module.min.js"
+            }
+        }
+    </script>
 
-		<script type="module">
-			import * as THREE from 'three';
-			import { init } from 'main';
-			
-			init(THREE);
-		</script>
-	</body>
+    <script type="module" src="./src/main.js"></script>
+</body>
 </html>
